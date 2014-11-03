@@ -9,7 +9,7 @@ class RemoteControl < Sinatra::Base
   set :server, :thin
   set :connections, {}
 
-  set :allow_origin, 'http://localhost:4000'
+  set :allow_origin, 'http://zampino.github.io'
   set :allow_methods, [:get, :post, :options]
   set :allow_credentials, false
   set :max_age, "1728000"
