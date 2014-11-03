@@ -26,8 +26,8 @@ class RemoteControl < Sinatra::Base
 
   get '/connections/:key', provides: 'text/event-stream' do |key|
     stream(:keep_open) { |out|
-      settings.connections.store(key, Connection.new(out))
-      out.errback { puts out; settings.connections.delete(key) }
+      settings.connections.store(key, Connection.new(key, out))
+      out.errback { settings.connections.delete(key) }
     }
   end
 
@@ -37,14 +37,21 @@ class RemoteControl < Sinatra::Base
   end
 
   post '/connections/:key', provides: :json do |key|
-    return [404, {}, 'no connection for key'] unless settings.connections[key]
+    return [404, {}, {message: "no connection for key: #{key}"}.to_json] unless settings.connections[key]
     settings.connections[key].write request.body.read
     {status: 'message received', key: key}.to_json
   end
 
   class Connection
-    def initialize(out)
+    def initialize(key, out)
+      @key = key
       @out = out
+      handshake
+    end
+
+    def handshake
+      puts '[HANDSHAKE]:', @key
+      @out << "retry: 1000\nid: #{@key}\nevent: handshake\ndata: connected #{@key}\n\n"
     end
 
     def closed?
@@ -52,10 +59,11 @@ class RemoteControl < Sinatra::Base
     end
 
     def write(data)
-      @out << format(data)
+      puts '[DATA]:', data
+      @out << data(data)
     end
 
-    def format(data)
+    def data(data)
       "data: #{data}\n\n"
     end
 
