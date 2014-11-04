@@ -9,7 +9,6 @@ class RemoteControl < Sinatra::Base
   set :server, :thin
   set :connections, {}
 
-  set :allow_origin, lambda { environment == 'production' ?     'http://zampino.github.io' : 'http://localhost:4000' }
   set :allow_methods, [:get, :post, :options]
   set :allow_credentials, false
   set :max_age, "1728000"
@@ -18,12 +17,13 @@ class RemoteControl < Sinatra::Base
   set :threaded, true
 
   configure do
+    set :allow_origin, proc { environment == :production ? 'http://zampino.github.io' : 'http://localhost:4000' }
     enable :cross_origin
     enable :logging
   end
 
   get '/' do
-    "env: #{settings.environment}<br />threaded: #{settings.threaded}<br />connections: <br />#{settings.connections.keys.join('<br />')}"
+    "origin: #{settings.allow_origin}<br />env: #{settings.environment}<br />threaded: #{settings.threaded}<br />connections: <br />#{settings.connections.keys.join('<br />')}"
   end
 
   get '/connections/:key', provides: 'text/event-stream' do |key|
