@@ -29,10 +29,12 @@ class RemoteControl < Sinatra::Base
   get '/connections/:key', provides: 'text/event-stream' do |key|
     stream(:keep_open) { |out|
       settings.connections.store(key, Connection.new(key, out, logger))
+
       out.callback {
         logger.info "[CLOSE]: #{key}"
         settings.connections.delete(key)
       }
+
       out.errback {
         logger.error "[ERROR]: #{key}"
         settings.connections.delete(key)
